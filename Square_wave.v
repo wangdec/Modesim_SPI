@@ -12,6 +12,7 @@ parameter Max_Clock_Half_Div=5400;   //主时钟为108M，而该值为54则SPI�
 parameter Min_Clock_Half_Div=54;   //主时钟为108M，而该值为5400则SPI实际时钟为10K.
 parameter Max_DA_Data_Bit=6;   //最大的输出位数.
 parameter DA_Clock_Half_Div=3;   //DA的输出时钟，3个为18M.
+parameter DA_Data_Step=2;   //
 
 reg Clock_Divide;
 reg Clock_Eable;
@@ -55,7 +56,7 @@ reg [13:0]DA_Data_Temp;
 		  Duration_Num_clk=0;
 		  Disable_Num_clk=0;
 		  Divide_Num_clk_Temp=Min_Clock_Half_Div;
-		  DA_Data_Temp={(14){1'b1}};
+		  DA_Data_Temp=0;
 		 end
 		else if(Clock_Eable)    //输出信号计数
 		 begin
@@ -68,7 +69,13 @@ reg [13:0]DA_Data_Temp;
 				 Clock_Divide=~Clock_Divide;
 				 Divide_Num_clk=0;
 				 if(Clock_Divide)
-				  Divide_Num_clk_Temp=Divide_Num_clk_Temp+Min_Clock_Half_Div;
+				  begin
+				    Divide_Num_clk_Temp=Divide_Num_clk_Temp+Min_Clock_Half_Div;
+				    DA_Data_Temp=DA_Data_Temp+DA_Data_Step;
+				    if(DA_Data_Temp>=({(14){1'b1}}>>Max_DA_Data_Bit))
+				      DA_Data_Temp=0;
+				  end
+				  
 				end		  
 			end 
 		  else if(Divide_Num_clk>Max_Clock_Half_Div || Duration_Num_clk>Duration )
@@ -98,6 +105,6 @@ reg [13:0]DA_Data_Temp;
 	 
 	 
 assign DA_Clock=DA_Clock_Temp;
-assign DA_Data=(Clock_Divide)?(DA_Data_Temp>>Max_DA_Data_Bit):{(14){1'b0}};
-
+//assign DA_Data=(Clock_Divide)?({(14){1'b1}}>>Max_DA_Data_Bit):{(14){1'b0}};
+assign DA_Data=(Clock_Divide)?DA_Data_Temp:{(14){1'b0}};
 endmodule
